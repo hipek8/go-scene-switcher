@@ -6,13 +6,17 @@ import (
 )
 
 func main() {
-	messageChannel := make(chan string)
+	schedulerToSynchronizerChannel := make(chan string)
 	syncer := scene.DummySynchronizer{
 		BaseSynchronizer: scene.BaseSynchronizer{
-			Sync: messageChannel}}
+			Sync: schedulerToSynchronizerChannel}}
 	go syncer.Run()
 
 	r := SetupRouter()
-	r = api.SetupSceneEndpoint(r, messageChannel)
+	r = api.SetupSceneEndpoint(r, schedulerToSynchronizerChannel)
+	api.SetupDeviceEndpoint(r)
+	mcScheduler := scene.MusicCastSceneScheduler{}
+	mcScheduler.Run()
 	r.Run(":8080")
+
 }

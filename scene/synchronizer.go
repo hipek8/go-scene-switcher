@@ -1,6 +1,9 @@
 package scene
 
-import "fmt"
+import (
+	"fmt"
+	"my/scene-switcher/device"
+)
 
 type Synchronizer interface {
 	Run()
@@ -20,7 +23,14 @@ type DummySynchronizer struct {
 func (sync *DummySynchronizer) Stop() {
 	sync.Sync <- ""
 }
+
+func (sync *DummySynchronizer) CurrentScene() string {
+	return sync.currentScene
+}
+
 func (sync *DummySynchronizer) Run() {
+	mc := device.MyMusicCast()
+	tv := device.MyHarmonyHub().GetTv()
 	if sync.isRunning {
 		return
 	}
@@ -32,5 +42,42 @@ func (sync *DummySynchronizer) Run() {
 		}
 		sync.currentScene = scene
 		fmt.Println("Synchronizing scene: " + scene)
+		switch scene {
+		case "off":
+			{
+				go tv.Off()
+				go mc.Off()
+			}
+		case "pc":
+			{
+				go mc.SetScene("hdmi1", "120", "")
+				go tv.On()
+			}
+		case "rns":
+			{
+				go mc.SetScene("netusb", "80", "1")
+				go tv.Off()
+			}
+		case "r357":
+			{
+				go mc.SetScene("netusb", "95", "2")
+				go tv.Off()
+			}
+		case "tv":
+			{
+				go tv.On()
+				go mc.SetScene("hdmi1", "100", "")
+			}
+		case "ai", "interface", "int":
+			{
+				go tv.Off()
+				go mc.SetScene("av2", "136", "")
+			}
+		case "mixer":
+			{
+				go tv.Off()
+				go mc.SetScene("av3", "136", "")
+			}
+		}
 	}
 }

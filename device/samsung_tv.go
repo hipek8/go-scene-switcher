@@ -2,44 +2,29 @@ package device
 
 import (
 	"fmt"
-	"time"
 )
 
-type SamsungTv struct {
+type Tv struct {
 	OnOff
-	port     int
-	mac      string
-	hostname string
+	CommandRunner
+	id  string
+	hub *HarmonyHub
 }
 
-func (tv *SamsungTv) On() error {
-	fmt.Println("On: " + string(tv.port) + tv.mac + tv.hostname)
-	harmony_tv := MyHarmonyHub().GetTv()
-	for retry := 1; retry <= 3; retry++ {
-		err := harmony_tv.On()
-		if err != nil {
-			// TODO websocket on
-			_ = err
-		}
-		time.Sleep(time.Second * time.Duration(retry))
-		// TODO check status and break
-
+func (tv *Tv) RunCommand(cmd string) (any, error) {
+	switch cmd {
+	case "on":
+		return nil, tv.On()
+	case "off":
+		return nil, tv.Off()
+	default:
+		return nil, fmt.Errorf("unknown command %v for Tv", cmd)
 	}
-	return nil
 }
 
-func (tv *SamsungTv) Off() error {
-	fmt.Println("Off: " + string(tv.port) + tv.mac + tv.hostname)
-	harmony_tv := MyHarmonyHub().GetTv()
-	for retry := 0; retry < 3; retry++ {
-		err := harmony_tv.Off()
-		if err != nil {
-			// TODO websocket on
-			_ = err
-		}
-		time.Sleep(time.Second * 1)
-		// TODO check status and break
-
-	}
-	return nil
+func (tv *Tv) On() (err error) {
+	return tv.hub.SendCommand("PowerOn", tv.id)
+}
+func (tv *Tv) Off() (err error) {
+	return tv.hub.SendCommand("PowerOff", tv.id)
 }

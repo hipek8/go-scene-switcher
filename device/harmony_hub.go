@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"time"
+
+	"github.com/gorilla/websocket"
 )
 
 // CONFIG
@@ -11,26 +13,22 @@ const HOST = "192.168.0.17"
 const PORT = 8088
 const HUB_ID = "16366653"
 const TV_ID = "69850160"
+const FAN_ID = "70675878"
 
 var i int = 1
 
-type tv struct {
-	OnOff
-	id  string
-	hub *HarmonyHub
-}
-
-func (tv *tv) On() (err error) {
-	return tv.hub.SendCommand("PowerOn", tv.id)
-}
-func (tv *tv) Off() (err error) {
-	return tv.hub.SendCommand("PowerOff", tv.id)
-}
-
 type HarmonyHub struct {
+	CommandRunner
 	host   string
 	port   int
 	hub_id string
+}
+
+func (hub *HarmonyHub) RunCommand(cmd string) (any, error) {
+	switch cmd {
+	default:
+		return nil, fmt.Errorf("unknown command %v for HarmonyHub", cmd)
+	}
 }
 
 func (hub *HarmonyHub) WsUrl() string {
@@ -41,8 +39,12 @@ func (hub *HarmonyHub) WsUrl() string {
 		hub.hub_id)
 }
 
-func (hub *HarmonyHub) GetTv() OnOff {
-	return &tv{id: TV_ID, hub: hub}
+func (hub *HarmonyHub) GetTv() *Tv {
+	return &Tv{id: TV_ID, hub: hub}
+}
+
+func (hub *HarmonyHub) GetFan() *Fan {
+	return &Fan{id: FAN_ID, hub: hub}
 }
 
 func (hub *HarmonyHub) SendCommand(cmd string, dev_id string) (err error) {
@@ -62,9 +64,9 @@ func (hub *HarmonyHub) SendCommand(cmd string, dev_id string) (err error) {
 	dumped, err := json.Marshal(map[string]interface{}{
 		"hubId":   hub.hub_id,
 		"timeout": 10,
-		"Hbus": map[string]interface{}{
-			"command": cmd,
-			"id":      i,
+		"hbus": map[string]interface{}{
+			"cmd": "vnd.logitech.harmony/vnd.logitech.harmony.engine?holdAction",
+			"id":  i,
 			"params": map[string]interface{}{
 				"status":    "press",
 				"verb":      "render",
@@ -76,9 +78,23 @@ func (hub *HarmonyHub) SendCommand(cmd string, dev_id string) (err error) {
 	if err != nil {
 		return
 	}
-	fmt.Println(string(dumped))
-	return
+	err = hub.sendWs(hub.WsUrl(), dumped)
+	return err
 }
+
+func (hub *HarmonyHub) sendWs(url string, data []byte) error {
+	c, _, err := websocket.DefaultDialer.Dial(url, nil)
+	if err != nil {
+		return err
+	}
+	defer c.Close()
+	err = c.WriteMessage(websocket.TextMessage, data)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (hub *HarmonyHub) StartActivity(activity_id string) {
 	// TODO: ws connect
 }
