@@ -187,5 +187,5 @@ func (mc *MusicCast) SetScene(
 }
 
 func MyMusicCast() *MusicCast {
-	return &MusicCast{host: "192.168.0.15", zone: "main"}
+	return &MusicCast{host: "192.168.1.104", zone: "main"}
 }

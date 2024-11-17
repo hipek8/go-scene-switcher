@@ -9,11 +9,11 @@ import (
 )
 
 // CONFIG
-const HOST = "192.168.0.17"
+const HOST = "192.168.1.188"
 const PORT = 8088
-const HUB_ID = "16366653"
-const TV_ID = "69850160"
-const FAN_ID = "70675878"
+const HUB_ID = "18841879"
+const TV_ID = "81633246"
+const FAN_ID = "70675878" // TODO
 
 var i int = 1
 
